@@ -2,7 +2,7 @@ import socket
 import select
 import time
 
-from modules.configurator import INPUTS
+from modules.configurator import INPUTS, OUTPUTS
 from modules.router_table import RouterTable
 
 active_sockets = []
@@ -20,11 +20,17 @@ def router_init():
         active_sockets.append(new_socket)
         print(f"[INIT] Bound to port {router_input}")
 
+    for destination, direct_link in OUTPUTS.items():
+        metric, next_hop = direct_link
+        routing_table.add_or_update_route(destination, next_hop, metric)
+
+    routing_table.print_routing_table()
+
+
 def send():
     global last_update_time
     current_time = time.monotonic()
     if current_time - last_update_time >= periodic_update_interval:
-        print("im here")
         for sock in active_sockets:
             for destination, entry in routing_table.routes.items():
                 message = f"{destination},{entry.next_hop},{entry.metric}"
@@ -36,6 +42,10 @@ def fetch():
     sockets, _, _ = select.select(active_sockets, [], [], 0.5)  
     for sock in sockets:
         update_routing_table(sock)
+    
+
+    routing_table.garbage_collect()
+    routing_table.print_routing_table()
 
 def update_routing_table(sock):
     data, addr = sock.recvfrom(1024)

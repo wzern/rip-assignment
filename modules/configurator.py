@@ -73,6 +73,9 @@ try:
 
         if port in outputs:
             raise ValueError(f"Duplicate output port detected: {port} is already connected.")
+        
+        if metric not in range(1,16):
+            raise ValueError(f"Metric {metric} must be between 1 and 15")
 
         outputs[port] = (metric, router_id)
 
