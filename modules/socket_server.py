@@ -31,12 +31,13 @@ def send():
     global last_update_time
     current_time = time.monotonic()
     if current_time - last_update_time >= periodic_update_interval:
-        for sock in active_sockets:
-            for destination, entry in routing_table.routes.items():
-                message = f"{destination},{entry.next_hop},{entry.metric}"
-                sock.sendto(message.encode(), ('127.0.0.1', destination))
-                print(f"[SEND] Sent update to {destination}: {message}")
+        for destination, (metric, next_hop) in OUTPUTS.items():  # Fix: Send to next_hop
+            message = f"{destination},{next_hop},{metric}"
+            for sock in active_sockets:
+                sock.sendto(message.encode(), ('127.0.0.1', next_hop))  # Fix: Send to next_hop
+                print(f"[SEND] Sent update to {next_hop}: {message}")
         last_update_time = current_time
+
 
 def fetch():
     sockets, _, _ = select.select(active_sockets, [], [], 0.5)  
@@ -49,9 +50,9 @@ def fetch():
 
 def update_routing_table(sock):
     data, addr = sock.recvfrom(1024)
-    routing_update = data.decode().split(',')
-    if len(routing_update) == 3:
-        destination, next_hop, metric = map(int, routing_update)
+    try:
+        destination, next_hop, metric = map(int, data.decode().split(','))
         routing_table.add_or_update_route(destination, next_hop, metric)
-        print(f"[RECEIVE] Update from {addr}: {routing_update}")
-    routing_table.print_routing_table()
+        print(f"[RECEIVE] Update from {addr}: Destination={destination}, Next Hop={next_hop}, Metric={metric}")
+    except ValueError:
+        print(f"[ERROR] Malformed update received: {data.decode()} from {addr}")

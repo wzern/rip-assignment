@@ -1,7 +1,7 @@
 import time
 
 class RouteEntry:
-    def __init__(self, destination, next_hop, metric, timeout=180):
+    def __init__(self, destination, next_hop, metric, timeout = 180):
         self.destination = destination
         self.next_hop = next_hop
         self.metric = metric
@@ -12,7 +12,7 @@ class RouteEntry:
         return (time.time() - self.last_updated) > self.timeout
 
     def update(self, next_hop, metric):
-        if metric < self.metric or self.next_hop == next_hop:
+        if metric < self.metric or (metric == self.metric and self.next_hop == next_hop):
             self.next_hop = next_hop
             self.metric = metric
             self.last_updated = time.time()
