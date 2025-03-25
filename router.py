@@ -6,7 +6,7 @@ from modules.rip_routing_table import RoutingTable
 from modules.configurator import get_router_id, get_router_inputs, get_router_outputs
 
 class RIPRouter:
-    def __init__(self, router_id, input_ports, outputs, timeout=10):
+    def __init__(self, router_id, input_ports, outputs):
         self.router_id = router_id
         self.input_ports = input_ports
         self.outputs = outputs  # {router_id: (port, metric)}
@@ -21,7 +21,8 @@ class RIPRouter:
             self.sockets.append(server_socket)
 
     def initialize_with_neighbors(self):
-        self.routing_table.add_or_update_route(dest_id=self.router_id, next_hop=self.router_id, metric=1, port=0)
+        self.routing_table.add_or_update_route(dest_id=self.router_id, next_hop=self.router_id, metric=0, port=0)
+        self.routing_table.routes[self.router_id]["timeout"] = -1
 
     def listen_for_messages(self):
         """Listen for incoming RIP messages on input ports."""
@@ -48,7 +49,6 @@ class RIPRouter:
             print(f"Invalid RIP packet: Command={command}, Version={version}. Dropping packet.")
             return
 
-        self.routing_table.__repr__()
 
         # Process each entry, 13 bytes per entry)
         num_entries = (len(rip_packet) - 4) // 13
@@ -65,7 +65,7 @@ class RIPRouter:
 
                 continue
 
-            if metric < 1 or metric > 16:
+            if metric < 0 or metric > 16:
                 print("error4")
 
                 continue
@@ -92,8 +92,8 @@ class RIPRouter:
             self.routing_table.add_or_update_route(dest_id, sender_id, new_metric, peer_port)
 
             # Reset sender's timeout
-            print(f"Setting RID: {dest_id} to timeout {time.time()}")
-            self.routing_table.routes[dest_id]["timeout"] = time.time()
+            if dest_id != self.router_id:
+                self.routing_table.routes[dest_id]["timeout"] = time.time() + self.routing_table.timeout
 
 
     def send_rip_message(self, peer_router_id):
@@ -112,31 +112,34 @@ class RIPRouter:
             self.send_rip_message(peer_router_id)
 
     def check_for_dead_routers(self):
-        """Check if any routers have timed out."""
+        """Check if any routers have timed out and start garbage collection if needed."""
         current_time = time.time()
-        dead_routers = []
+        for router_id, entry in list(self.routing_table.routes.items()):
+            last_time = entry["timeout"]
+            
+            if current_time >= last_time and last_time != -1:
+                if entry["metric"] != 16:
+                    # Mark the route as unreachable
+                    entry["metric"] = 16  # Set to unreachable
+                    entry["garbage_collection"] = current_time + self.routing_table.gc_time
+                    self.send_periodic_updates()  # Notify neighbors of unreachable route
 
-        for router_id, _ in list(self.routing_table.routes.items()):
-            last_time = self.routing_table.routes[router_id]["timeout"]
-            if current_time - last_time > self.routing_table.timeout:
-                # If the router hasn't sent a message within the timeout period, mark it as dead
-                print(f"Router {router_id} is considered dead due to timeout.")
-                dead_routers.append(router_id)
-                self.remove_dead_router(router_id)
-
-        return dead_routers
-
-    def remove_dead_router(self, router_id):
-        """Remove the router from the routing table and last_received dictionary."""
-        if router_id in self.routing_table.routes:
+    def process_garbage_collection(self):
+        """Remove routes whose garbage collection timer has expired."""
+        current_time = time.time()
+        to_remove = [router_id for router_id, entry in self.routing_table.routes.items()
+                    if entry["metric"] == 16 and current_time >= entry["garbage_collection"]]
+        
+        for router_id in to_remove:
+            print(f"Garbage collection expired for router {router_id}, removing from table.")
             del self.routing_table.routes[router_id]
-            print(f"Removed dead router {router_id} from routing table.")
 
 
 def main():
     router = RIPRouter(get_router_id(), get_router_inputs(), get_router_outputs())
     router.initialize_with_neighbors()
     last_update_time = time.time()
+    last_print_time = time.time()
 
     while True:
         # Listen for incoming messages
@@ -148,8 +151,14 @@ def main():
             router.send_periodic_updates()
             last_update_time = current_time
 
+        if current_time - last_print_time >= 0.1:
+            print(repr(router.routing_table))
+            last_print_time = current_time
+
+
         # Check for any dead routers and remove them from the routing table
         router.check_for_dead_routers()
+        router.process_garbage_collection()  # <-- Ensure garbage collection is handled
 
 if __name__ == "__main__":
     try:
