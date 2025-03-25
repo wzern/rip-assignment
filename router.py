@@ -54,8 +54,6 @@ class RIPRouter:
         num_entries = (len(rip_packet) - 4) // 13
         offset = 4
 
-        print(num_entries)
-
         for _ in range(num_entries):
             afi = (rip_packet[offset] << 8) | rip_packet[offset + 1]
             dest_id = (rip_packet[offset + 2] << 8) | rip_packet[offset + 3]
@@ -84,7 +82,6 @@ class RIPRouter:
 
             # If route metric is 16 (unreachable), mark for garbage collection
             if metric == 16:
-                print("error2")
                 # self.routing_table.mark_unreachable(dest_id)
                 continue
 
@@ -155,4 +152,8 @@ def main():
         router.check_for_dead_routers()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except(KeyboardInterrupt):
+        print("\nExiting Gracefully")
+        exit()
