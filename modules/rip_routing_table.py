@@ -29,13 +29,16 @@ class RoutingTable:
                 "timeout": time.time() + self.timeout,
                 "garbage_collection": 0
             }
+        
+        
+
 
     def __repr__(self):
         """Detailed, structured representation of the routing table."""
         header = (
-            "\n========================== ROUTING TABLE ==========================\n"
-            " PEER ROUTER   | NEXT HOP  | DISTANCE | PORT | ROUTE TIMEOUT | GC TIMER \n"
-            "----------------------------------------------------------------------"
+            "\n=========================== ROUTING TABLE ===========================\n"
+            " PEER ROUTER | NEXT HOP | DISTANCE | PORT | ROUTE TIMEOUT | GC TIMER \n"
+            "---------------------------------------------------------------------"
         )
 
         rows = []
@@ -48,7 +51,7 @@ class RoutingTable:
                 gc_timer = 0
 
             rows.append(
-                f" {dest:<13} | {entry['next_hop']:<9} | {entry['metric']:^8} | {entry['port']:^4} "
+                f" {dest:<11} | {entry['next_hop']:<8} | {entry['metric']:^8} | {entry['port']:^4} "
                 f"| {route_timeout:^13} | {gc_timer:^8}"
             )
 

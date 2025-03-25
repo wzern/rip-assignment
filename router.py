@@ -91,10 +91,6 @@ class RIPRouter:
             # Update the routing table if necessary
             self.routing_table.add_or_update_route(dest_id, sender_id, new_metric, peer_port)
 
-            # Reset sender's timeout
-            if dest_id != self.router_id:
-                self.routing_table.routes[dest_id]["timeout"] = time.time() + self.routing_table.timeout
-
 
     def send_rip_message(self, peer_router_id):
         """Send a RIP message to a peer router."""
