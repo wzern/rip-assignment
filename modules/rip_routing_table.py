@@ -9,7 +9,7 @@
 # }
 
 
-import time
+import time, datetime
 
 class RoutingTable:
     def __init__(self, timeout=18, garbage_collection_time=6):
@@ -27,13 +27,36 @@ class RoutingTable:
                 "metric": metric,
                 "port": port,
                 "timeout": time.time() + self.timeout,
-                "garbage_collection": None
+                "garbage_collection": 0
             }
 
     def __repr__(self):
-        print("Routing Table:")
+        """Detailed, structured representation of the routing table."""
+        header = (
+            "\n========================== ROUTING TABLE ==========================\n"
+            " PEER ROUTER   | NEXT HOP  | DISTANCE | PORT | ROUTE TIMEOUT | GC TIMER \n"
+            "----------------------------------------------------------------------"
+        )
+
+        rows = []
         for dest, entry in self.routes.items():
-            print(f"Dest: {dest}, Next Hop: {entry['next_hop']}, Metric: {entry['metric']}, Port: {entry['port']}, Timeout: {entry['timeout']}, GC: {entry['garbage_collection']}")
+            route_timeout = int(round(entry['timeout'] - time.time()))
+            if route_timeout < 0:
+                route_timeout = -1
+            gc_timer = int(round(entry['garbage_collection']) - time.time())
+            if gc_timer < 0:
+                gc_timer = 0
+
+            rows.append(
+                f" {dest:<13} | {entry['next_hop']:<9} | {entry['metric']:^8} | {entry['port']:^4} "
+                f"| {route_timeout:^13} | {gc_timer:^8}"
+            )
+
+        return f"{header}\n" + "\n".join(rows) + "\n"
+
+    def __str__(self):
+        """User-friendly string representation."""
+        return f"<RIPRouter: {len(self.routes)} routes, last updated {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}>"
 
     def rip_response(self, sender_id, neighbor_id):
         rip_packet = bytearray()
