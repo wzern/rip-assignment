@@ -61,13 +61,10 @@ class RIPRouter:
             offset += 13  # Move to the next entry
             
             if afi != 2:
-                print("error3")
-
                 continue
 
             if metric < 0 or metric > 16:
-                print("error4")
-
+                print(f"Metric {metric} is invalid")
                 continue
 
             # Get the port from sender's known outputs
@@ -96,8 +93,6 @@ class RIPRouter:
         """Send a RIP message to a peer router."""
         peer_port, _ = self.outputs[peer_router_id]
         message = self.routing_table.rip_response(self.router_id, peer_router_id)
-        # message = message.encode('utf-8')
-
 
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         client_socket.sendto(message, ('localhost', peer_port))

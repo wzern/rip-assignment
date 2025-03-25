@@ -1,3 +1,5 @@
+# Router table entry example structure:
+#
 # routing_table = {
 #     destination_router_id: {
 #         "next_hop": next_hop_router_id,  # Who to forward packets to
@@ -29,37 +31,6 @@ class RoutingTable:
                 "timeout": time.time() + self.timeout,
                 "garbage_collection": 0
             }
-        
-        
-
-
-    def __repr__(self):
-        """Detailed, structured representation of the routing table."""
-        header = (
-            "\n=========================== ROUTING TABLE ===========================\n"
-            " PEER ROUTER | NEXT HOP | DISTANCE | PORT | ROUTE TIMEOUT | GC TIMER \n"
-            "---------------------------------------------------------------------"
-        )
-
-        rows = []
-        for dest, entry in self.routes.items():
-            route_timeout = int(round(entry['timeout'] - time.time()))
-            if route_timeout < 0:
-                route_timeout = -1
-            gc_timer = int(round(entry['garbage_collection']) - time.time())
-            if gc_timer < 0:
-                gc_timer = 0
-
-            rows.append(
-                f" {dest:<11} | {entry['next_hop']:<8} | {entry['metric']:^8} | {entry['port']:^4} "
-                f"| {route_timeout:^13} | {gc_timer:^8}"
-            )
-
-        return f"{header}\n" + "\n".join(rows) + "\n"
-
-    def __str__(self):
-        """User-friendly string representation."""
-        return f"<RIPRouter: {len(self.routes)} routes, last updated {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}>"
 
     def rip_response(self, sender_id, neighbor_id):
         rip_packet = bytearray()
@@ -86,3 +57,31 @@ class RoutingTable:
             rip_packet.append(metric & 0xFF)
 
         return rip_packet
+    
+    def __str__(self):
+        """User-friendly string representation."""
+        return f"<RIPRouter: {len(self.routes)} routes, last updated {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}>"
+        
+    def __repr__(self):
+        """Detailed, structured representation of the routing table."""
+        header = (
+            "\n=========================== ROUTING TABLE ===========================\n"
+            " PEER ROUTER | NEXT HOP | DISTANCE | PORT | ROUTE TIMEOUT | GC TIMER \n"
+            "---------------------------------------------------------------------"
+        )
+
+        rows = []
+        for dest, entry in self.routes.items():
+            route_timeout = int(round(entry['timeout'] - time.time()))
+            if route_timeout < 0:
+                route_timeout = -1
+            gc_timer = int(round(entry['garbage_collection']) - time.time())
+            if gc_timer < 0:
+                gc_timer = 0
+
+            rows.append(
+                f" {dest:<11} | {entry['next_hop']:<8} | {entry['metric']:^8} | {entry['port']:^4} "
+                f"| {route_timeout:^13} | {gc_timer:^8}"
+            )
+
+        return f"{header}\n" + "\n".join(rows) + "\n"
