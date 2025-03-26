@@ -35,6 +35,7 @@ class RoutingTable:
                 "garbage_collection": 0
             }
 
+
     def rip_response(self, sender_id, neighbor_id):
         rip_packet = bytearray()
         rip_packet.append(2)  # Command (2 = Response)
@@ -212,6 +213,15 @@ class RIPRouter:
             print(f"Garbage collection expired for router {router_id}, removing from table.")
             del self.routing_table.routes[router_id]
 
+    def __str__(self):
+        return f"<RIPRouter {self.router_id}: {len(self.routing_table.routes)} routes, listening on ports {self.input_ports}>"
+
+    def __repr__(self):
+        return (
+            f"RIPRouter(router_id={self.router_id}, input_ports={self.input_ports}, "
+            f"outputs={self.outputs}, routing_table={repr(self.routing_table)})"
+        )
+
 
 class RouterScheduler:
     def __init__(self, update_freq=5, print_freq=2):
@@ -238,3 +248,12 @@ class RouterScheduler:
         # Check for any dead routers and remove them from the routing table
         router.check_for_dead_routers()
         router.process_garbage_collection()
+
+    def __str__(self):
+        return f"<RouterScheduler: update_freq={self.update_freq}s, print_freq={self.print_freq}s>"
+
+    def __repr__(self):
+        return (
+            f"RouterScheduler(update_freq={self.update_freq}, print_freq={self.print_freq}, "
+            f"last_update_time={self.last_update_time}, last_print_time={self.last_print_time})"
+        )
