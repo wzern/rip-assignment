@@ -19,7 +19,6 @@ def port_validator(port, current_ports):
 
     return True
 
-
 def id_validator(router_id):
     """Validates a router ID"""
     if not isinstance(router_id, int):
@@ -50,7 +49,6 @@ def get_router_id():
 
     return router_id
 
-
 def get_router_inputs():
     input_ports = []
     try:
@@ -76,7 +74,6 @@ def get_router_inputs():
 
     return input_ports
 
-    
 def get_router_outputs():
     outputs = {}
     try:

@@ -1,16 +1,3 @@
-# Router table entry example structure:
-#
-# routing_table = {
-#     destination_router_id: {
-#         "next_hop": next_hop_router_id,  # Who to forward packets to
-#         "metric": metric,                # Distance to the destination (1-16)
-#         "port": outgoing_port,            # The port to use to reach next_hop
-#         "timeout": timer_value,           # Used for route invalidation
-#         "garbage_collection": None        # If expired, scheduled for removal
-#     }
-# }
-
-
 import time
 import datetime
 import socket
@@ -35,7 +22,6 @@ class RoutingTable:
                 "garbage_collection": 0
             }
 
-
     def rip_response(self, sender_id, neighbor_id):
         rip_packet = bytearray()
         rip_packet.append(2)  # Command (2 = Response)
@@ -43,10 +29,8 @@ class RoutingTable:
         rip_packet.append((sender_id >> 8) & 0xFF)  # Router ID high byte
         rip_packet.append(sender_id & 0xFF)  # Router ID low byte
 
-
         # Append route entries
         for dest_id, entry in self.routes.items():
-            # Apply split-horizon with poisoned reverse
             if entry["next_hop"] == neighbor_id:
                 metric = 16  # Poisoned reverse
             else:
@@ -61,7 +45,7 @@ class RoutingTable:
             rip_packet.append(metric & 0xFF)
 
         return rip_packet
-    
+
     def __str__(self):
         """User-friendly string representation."""
         return f"<RIPRouter: {len(self.routes)} routes, last updated {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}>"
@@ -90,7 +74,6 @@ class RoutingTable:
 
         return f"{header}\n" + "\n".join(rows) + "\n"
     
-
 class RIPRouter:
     def __init__(self, router_id, input_ports, outputs):
         self.router_id = router_id
@@ -137,7 +120,6 @@ class RIPRouter:
             print(f"Invalid RIP packet: Command={command}, Version={version}. Dropping packet.")
             return
 
-
         # Process each entry, 13 bytes per entry)
         num_entries = (len(rip_packet) - 4) // 13
         offset = 4
@@ -167,7 +149,6 @@ class RIPRouter:
 
             # If route metric is 16 (unreachable), mark for garbage collection
             if metric == 16:
-                # self.routing_table.mark_unreachable(dest_id)
                 continue
 
             link_metric = self.outputs.get(sender_id, (None, 1))[1]  # Get the correct link metric
@@ -175,7 +156,6 @@ class RIPRouter:
 
             # Update the routing table if necessary
             self.routing_table.add_or_update_route(dest_id, sender_id, new_metric, peer_port)
-
 
     def send_rip_message(self, peer_router_id):
         """Send a RIP message to a peer router."""
@@ -221,7 +201,6 @@ class RIPRouter:
             f"RIPRouter(router_id={self.router_id}, input_ports={self.input_ports}, "
             f"outputs={self.outputs}, routing_table={repr(self.routing_table)})"
         )
-
 
 class RouterScheduler:
     def __init__(self, update_freq=5, print_freq=2):
