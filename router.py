@@ -5,8 +5,8 @@ def main():
     router = RIPRouter(get_router_id(), get_router_inputs(), get_router_outputs())
 
     # Override default timeouts for more efficient testing
-    router.routing_table.timeout = 18
-    router.routing_table.gc_time = 6
+    #router.routing_table.timeout = 18
+    #router.routing_table.gc_time = 6
 
     router_scheduler = RouterScheduler(update_freq=5, print_freq=2)
 
