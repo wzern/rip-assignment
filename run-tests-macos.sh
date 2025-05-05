@@ -9,7 +9,7 @@ if [ -z "$CONFIG_FOLDER" ]; then
   exit 1
 fi
 
-for cfg_file in "$CONFIG_FOLDER"/*.cfg; do
+for cfg_file in "$CONFIG_FOLDER"/*.conf; do
   full_path=$(realpath "$cfg_file")
   
   echo "Opening new terminal window for $cfg_file"
